@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+prefix=${OS2EMX_PREFIX:-"${HOME}/opt/os2emx"}
+target=i686-pc-os2-emx
+PATH="$prefix/bin:$prefix/$target/bin:${PATH:-}"
+export PATH
+exec "$prefix/bin/$target-g++" "$@"

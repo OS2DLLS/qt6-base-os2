@@ -1,0 +1,24 @@
+# Qt 6 OS/2 cross build
+
+# Build trees, generated files, and local host-tool installations
+build*/
+cmake-build*/
+qt6-host-install/
+qt6-os2-install/
+
+# Local build logs and temporary archives
+*.log
+*.zip
+
+# CMake generated files when a build is accidentally configured in-tree
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+Makefile
+CTestTestfile.cmake
+
+# Qt generated build metadata
+.qmake.stash
+compile_commands.json
+_autogen/
