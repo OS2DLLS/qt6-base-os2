@@ -541,8 +541,8 @@ DEFINEFUNC(void, EC_KEY_free, EC_KEY *ecdh, ecdh, return, DUMMYARG)
 
 #ifdef Q_OS_OS2
 #define RESOLVEFUNC(func) \
-    if (!(_q_##func = _q_PTR_##func(libs.first->resolve("_"#func)))     \
-        && !(_q_##func = _q_PTR_##func(libs.second->resolve("_"#func)))) \
+    if (!(_q_##func = _q_PTR_##func(libs.ssl->resolve(#func)))     \
+        && !(_q_##func = _q_PTR_##func(libs.crypto->resolve(#func)))) \
         qsslSocketCannotResolveSymbolWarning(#func);
 #else
 #define RESOLVEFUNC(func) \

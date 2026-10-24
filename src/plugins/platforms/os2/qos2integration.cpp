@@ -50,6 +50,8 @@
 #include "qos2clipboard.h"
 #endif
 
+#include <QtCore/QDir>
+
 #include <qpa/qwindowsysteminterface.h>
 
 #include <QtGui/private/qos2guieventdispatcher_p.h>
@@ -142,7 +144,16 @@ QPlatformFontDatabase *QOS2Integration::fontDatabase() const
 #if QT_CONFIG(fontconfig)
         const_cast <QPlatformFontDatabase * &> (mFontDatabase) = new QGenericUnixFontDatabase;
 #else
+#if QT_FEATURE_freetype
+        // Prefer OS/2's public font directory unless the caller configured another one.
+        if (qgetenv("QT_QPA_FONTDIR").isEmpty()
+            && QDir(QStringLiteral("C:/PSFONTS")).exists()) {
+            qputenv("QT_QPA_FONTDIR", QByteArrayLiteral("C:/PSFONTS"));
+        }
+        const_cast <QPlatformFontDatabase * &> (mFontDatabase) = new QFreeTypeFontDatabase;
+#else
         const_cast <QPlatformFontDatabase * &> (mFontDatabase) = QPlatformIntegration::fontDatabase();
+#endif
 #endif
     }
 

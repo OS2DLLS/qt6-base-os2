@@ -45,6 +45,7 @@
 
 #include <qpa/qplatformdialoghelper.h>
 
+#include <QtCore/QStringList>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QColor>
 #include <QtGui/QFont>
@@ -152,6 +153,12 @@ QFont *qt_sysfont2qfont(PCSZ scope)
 
         delete[] buf;
     }
+
+    QStringList families;
+    families << f->family();
+    if (!families.contains(QLatin1String("Helvetica"), Qt::CaseInsensitive))
+        families << QLatin1String("Helvetica");
+    f->setFamilies(families);
 
     qCInfo(lcQpaWindows) << *f;
 

@@ -2,6 +2,16 @@
 set -eu
 prefix=${OS2EMX_PREFIX:-"${HOME}/opt/os2emx"}
 target=i686-pc-os2-emx
-PATH="$prefix/bin:$prefix/$target/bin:${PATH:-}"
+build_prefix=/data/cross-os2emx/gcc-os2-ps/build/gcc
+loader=/nix/store/avld9cdn23zab2ssl30h2r6444rqh6ms-glibc-2.42-67/lib64/ld-linux-x86-64.so.2
+libpath=/nix/store/avld9cdn23zab2ssl30h2r6444rqh6ms-glibc-2.42-67/lib
+export LD_LIBRARY_PATH="$libpath${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+PATH="$build_prefix:$prefix/bin:$prefix/$target/bin:${PATH:-}"
 export PATH
+if [ -x "$prefix/bin/$target-gcc" ]; then
+    exec env -u LD_LIBRARY_PATH "$prefix/bin/$target-gcc" "$@"
+fi
+if [ -x "$build_prefix/xgcc" ]; then
+    exec "$loader" --library-path "$libpath" "$build_prefix/xgcc" "$@"
+fi
 exec "$prefix/bin/$target-gcc" "$@"

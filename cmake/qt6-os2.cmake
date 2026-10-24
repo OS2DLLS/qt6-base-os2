@@ -40,26 +40,31 @@ set(CMAKE_TRY_COMPILE_PLATFORM_VARIABLES QT_HOST_PATH OS2EMX_PREFIX)
 set(OS2EMX_TARGET "i686-pc-os2-emx")
 set(CMAKE_C_COMPILER "${CMAKE_CURRENT_LIST_DIR}/os2-gcc")
 set(CMAKE_CXX_COMPILER "${CMAKE_CURRENT_LIST_DIR}/os2-g++")
-set(CMAKE_AR "${OS2EMX_PREFIX}/${OS2EMX_TARGET}/bin/emxomfar")
-set(CMAKE_RANLIB "${OS2EMX_PREFIX}/bin/${OS2EMX_TARGET}-ranlib")
+# Use the host OMF archiver installed for this workspace.  This is not the
+# target-side GNU ar/ranlib and must not be replaced with either tool.
+set(CMAKE_AR "/data/build-nix/os2-build-tools/emxomfar" CACHE FILEPATH "Host OMF archiver" FORCE)
+set(CMAKE_RANLIB ":")
 set(CMAKE_STRIP "${OS2EMX_PREFIX}/bin/${OS2EMX_TARGET}-strip")
 set(CMAKE_C_COMPILER_AR "${CMAKE_AR}" CACHE FILEPATH "C archiver" FORCE)
 set(CMAKE_CXX_COMPILER_AR "${CMAKE_AR}" CACHE FILEPATH "C++ archiver" FORCE)
 set(CMAKE_C_COMPILER_RANLIB "${CMAKE_RANLIB}" CACHE FILEPATH "C ranlib" FORCE)
 set(CMAKE_CXX_COMPILER_RANLIB "${CMAKE_RANLIB}" CACHE FILEPATH "C++ ranlib" FORCE)
-set(CMAKE_C_ARCHIVE_CREATE "${CMAKE_COMMAND} -E rm -f <TARGET> && <CMAKE_AR> cr <TARGET> <OBJECTS>")
-set(CMAKE_C_ARCHIVE_APPEND "<CMAKE_AR> r <TARGET> <OBJECTS>")
+set(CMAKE_C_ARCHIVE_CREATE "/data/build-nix/os2-build-tools/emxomfar cr <TARGET> <OBJECTS>")
+set(CMAKE_C_ARCHIVE_APPEND "/data/build-nix/os2-build-tools/emxomfar r <TARGET> <OBJECTS>")
 set(CMAKE_C_ARCHIVE_FINISH "")
-set(CMAKE_CXX_ARCHIVE_CREATE "${CMAKE_COMMAND} -E rm -f <TARGET> && <CMAKE_AR> cr <TARGET> <OBJECTS>")
-set(CMAKE_CXX_ARCHIVE_APPEND "<CMAKE_AR> r <TARGET> <OBJECTS>")
+set(CMAKE_CXX_ARCHIVE_CREATE "/data/build-nix/os2-build-tools/emxomfar cr <TARGET> <OBJECTS>")
+set(CMAKE_CXX_ARCHIVE_APPEND "/data/build-nix/os2-build-tools/emxomfar r <TARGET> <OBJECTS>")
 set(CMAKE_CXX_ARCHIVE_FINISH "")
 set(CMAKE_SYSROOT "${OS2EMX_PREFIX}/${OS2EMX_TARGET}")
 
-foreach(tool IN ITEMS CMAKE_C_COMPILER CMAKE_CXX_COMPILER CMAKE_RANLIB CMAKE_STRIP)
+foreach(tool IN ITEMS CMAKE_C_COMPILER CMAKE_CXX_COMPILER CMAKE_AR CMAKE_STRIP)
     if(NOT EXISTS "${${tool}}")
         message(FATAL_ERROR "Required cross tool is missing: ${${tool}}")
     endif()
 endforeach()
+if(NOT CMAKE_RANLIB STREQUAL ":" AND NOT EXISTS "${CMAKE_RANLIB}")
+    message(FATAL_ERROR "Required ranlib is missing: ${CMAKE_RANLIB}")
+endif()
 if(NOT IS_DIRECTORY "${CMAKE_SYSROOT}")
     message(FATAL_ERROR "Cross sysroot is missing: ${CMAKE_SYSROOT}")
 endif()
@@ -77,13 +82,19 @@ set(CMAKE_C_FLAGS "-Zomf -Zsym -Zmap -O2 -idirafter ${CMAKE_SYSROOT}/include/os2
     CACHE STRING "OS/2 C compiler flags" FORCE)
 set(CMAKE_CXX_FLAGS "-Zomf -Zsym -Zmap -O2 -DHB_NO_MT -idirafter ${CMAKE_SYSROOT}/include/os2tk45"
     CACHE STRING "OS/2 C++ compiler flags" FORCE)
-set(CMAKE_EXE_LINKER_FLAGS_INIT "-Zomf -Zsym -Zmap -lcx -lcx0")
-set(CMAKE_SHARED_LINKER_FLAGS_INIT "-Zomf -Zsym -Zmap -lcx -lcx0")
-set(CMAKE_MODULE_LINKER_FLAGS_INIT "-Zomf -Zsym -Zmap -lcx -lcx0")
-set(CMAKE_CXX_STANDARD_LIBRARIES "-lcx0 -lcx" CACHE STRING
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-Zomf -Zsym -Zmap -Zcrtdll")
+set(CMAKE_SHARED_LINKER_FLAGS_INIT "-Zomf -Zsym -Zmap -Zcrtdll")
+set(CMAKE_MODULE_LINKER_FLAGS_INIT "-Zomf -Zsym -Zmap -Zcrtdll")
+set(CMAKE_CXX_STANDARD_LIBRARIES "-lcx -Zcrtdll" CACHE STRING
     "OS/2 runtime libraries" FORCE)
-set(CMAKE_C_STANDARD_LIBRARIES "-lcx0 -lcx" CACHE STRING
+set(CMAKE_C_STANDARD_LIBRARIES "-lcx -Zcrtdll" CACHE STRING
     "OS/2 runtime libraries" FORCE)
+
+# Qt's OS/2 port uses the native OS/2 thread primitives.  Do not make the
+# generic CMake Threads package inject a nonexistent pthreads_s.a archive.
+set(THREADS_PREFER_PTHREAD_FLAG OFF CACHE BOOL "" FORCE)
+set(CMAKE_THREAD_LIBS_INIT "" CACHE STRING "OS/2 thread libraries" FORCE)
+set(CMAKE_USE_PTHREADS_INIT OFF CACHE BOOL "" FORCE)
 
 # Qt's OS/2 build is intentionally conservative: these options are the
 # defaults used by the verified Linux-to-OS/2 shared-DLL build. They remain
