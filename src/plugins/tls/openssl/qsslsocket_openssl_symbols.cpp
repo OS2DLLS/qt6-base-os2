@@ -66,6 +66,9 @@
 #endif
 #include <QtCore/qmutex.h>
 #include <QtCore/qdatetime.h>
+#ifdef Q_OS_OS2
+#include <QtCore/QCoreApplication>
+#endif
 #if defined(Q_OS_UNIXLIKE)
 #include <QtCore/qdir.h>
 #endif
@@ -638,6 +641,7 @@ static QStringList libraryPathList()
             .split(QLatin1Char(':'), Qt::SkipEmptyParts);
 #  endif
 #  ifdef Q_OS_OS2
+    paths << QCoreApplication::applicationDirPath();
     // local/lib should be checked before lib/. We might also support LIBPATH similarly to LD_LIBRARY_PATH
     // later - but since it not exposed via getenv, parsing CONFIG.SYS is needed. Once it's done,
     // the below line is not needed as LIBPATH contains both.
