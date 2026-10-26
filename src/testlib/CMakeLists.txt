@@ -151,3 +151,9 @@ qt_internal_apply_testlib_coverage_options(Test)
 if(QT_FEATURE_private_tests)
     add_subdirectory(doc/snippets/code)
 endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "OS2")
+    os2_qt_add_import_library(Test)
+endif()
+
+

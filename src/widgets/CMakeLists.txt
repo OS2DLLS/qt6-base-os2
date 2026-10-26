@@ -844,3 +844,9 @@ if(QT_FEATURE_private_tests)
     add_subdirectory(doc/snippets/mdiarea)
     add_subdirectory(doc/snippets/myscrollarea)
 endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "OS2")
+    os2_qt_add_import_library(Widgets)
+endif()
+
+

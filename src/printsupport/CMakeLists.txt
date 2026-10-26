@@ -192,3 +192,9 @@ qt_internal_extend_target(PrintSupport CONDITION QT_FEATURE_printpreviewdialog
 qt_internal_add_docs(PrintSupport
     doc/qtprintsupport.qdocconf
 )
+
+if(CMAKE_SYSTEM_NAME STREQUAL "OS2")
+    os2_qt_add_import_library(PrintSupport)
+endif()
+
+

@@ -1424,3 +1424,9 @@ if(APPLE AND QT_FEATURE_framework AND QT_FEATURE_separate_debug_info)
         DESTINATION "${dsym_script_install_dir}"
     )
 endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "OS2")
+    os2_qt_add_import_library(Core)
+endif()
+
+

@@ -363,3 +363,9 @@ qt_internal_extend_target(Network CONDITION SOLARIS PUBLIC_LIBRARIES socket nsl)
 if(QT_FEATURE_private_tests)
     add_subdirectory(doc/snippets/network)
 endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "OS2")
+    os2_qt_add_import_library(Network)
+endif()
+
+

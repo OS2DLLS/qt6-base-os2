@@ -47,3 +47,9 @@ qt_internal_add_docs(Concurrent
     doc/qtconcurrent.qdocconf
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "OS2")
+    os2_qt_add_import_library(Concurrent)
+endif()
+
+
+

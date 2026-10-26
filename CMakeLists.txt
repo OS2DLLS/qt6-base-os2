@@ -61,6 +61,16 @@ project(QtBase
     LANGUAGES CXX C ASM
 )
 
+# Include OS/2 short DLL helper if building for OS/2
+if(CMAKE_SYSTEM_NAME STREQUAL "OS2")
+    include("${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/Qt6OS2ShortDlls.cmake")
+endif()
+
+# Include OS/2 short DLL helper if building for OS/2
+if(CMAKE_SYSTEM_NAME STREQUAL "OS2")
+    include("${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/Qt6OS2ShortDlls.cmake")
+endif()
+
 # Should this Qt be static or dynamically linked?
 option(BUILD_SHARED_LIBS "Build Qt statically or dynamically" ON)
 set(QT_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
