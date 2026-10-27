@@ -17,17 +17,26 @@ output format is OS/2 OMF DLLs produced by the `cross-os2emx` toolchain.
 By default the toolchain is expected at `$HOME/opt/os2emx`. Set
 `OS2EMX_PREFIX` when it is installed elsewhere. `QT_HOST_PATH` must point to a
 native Qt installation for the host tools; it is not the OS/2 target prefix.
+For the current Vacuum/OS/2 setup, the cross sysroot (including `pthread.h`) is
+under `/data/os2emx`; the target OpenSSL package is expected under
+`/data/os2emx/i686-pc-os2-emx`.
 
 ## Linux to OS/2 build
 
 From the repository root, configure once with CMake and then invoke Make:
 
+# Current workspace paths under the active OS/2 prefix.
+
 ```sh
-export OS2EMX_PREFIX="$HOME/opt/os2emx"
-export QT_HOST_PATH="$HOME/opt/qt6-host"
+export OS2EMX_PREFIX="/data/os2emx"
+export OS2EMX_AR="/data/os2emx/bin/emxomfar"
+export QT_HOST_PATH="/data/qt6-host"
+export OPENSSL_ROOT_DIR="/data/os2emx/i686-pc-os2-emx"
 
 cmake -S . -B build-os2 -G "Unix Makefiles" \
-  -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/qt6-os2.cmake"
+  -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/qt6-os2.cmake" \
+  -DOPENSSL_ROOT_DIR="$OPENSSL_ROOT_DIR" \
+  -DINPUT_openssl=runtime
 make -C build-os2 -j2
 ```
 
@@ -45,12 +54,39 @@ and disable GNU linker version scripts because those features are not provided
 by the OS/2 OMF link environment. Override a default with an explicit CMake
 cache option when the corresponding OS/2 dependency is installed.
 
-A clean rebuild is:
+### SSL for Vacuum
+
+`INPUT_openssl=runtime` enables Qt's dynamically loaded OpenSSL backend. Qt's
+`ssl` feature is derived from that backend; do not force `FEATURE_ssl=ON` by
+itself. `OPENSSL_ROOT_DIR` must identify the **target** OpenSSL prefix (with
+`include/openssl` and `lib`), never a Linux host OpenSSL installation. The
+cross-toolchain sysroot must also provide the target `pthread.h`: Qt's
+OpenSSL-header configure test includes it. In this setup, use
+`OS2EMX_PREFIX=/data/os2emx` and
+`OPENSSL_ROOT_DIR=/data/os2emx/i686-pc-os2-emx`.
+
+After configuration, verify the feature selection before building:
+
+```sh
+grep -E '^(OPENSSL_INCLUDE_DIR|FEATURE_openssl_runtime|QT_FEATURE_openssl_runtime|QT_FEATURE_ssl):' \
+  build-os2/CMakeCache.txt
+```
+
+The expected result includes a found target `OPENSSL_INCLUDE_DIR` and
+`FEATURE_openssl_runtime:BOOL=ON`, `QT_FEATURE_openssl_runtime:INTERNAL=ON`,
+and `QT_FEATURE_ssl:INTERNAL=ON`. The runtime build also needs the Qt TLS
+plugin and target OpenSSL DLLs reachable by OS/2. Qt searches for names matching
+`ssl*.dll` and `crypto*.dll`; this OpenSSL prefix supplies `ssl3.dll` and
+`crypto3.dll` below `lib`.
+
+A clean rebuild (in the same shell, retaining the environment exports above) is:
 
 ```sh
 rm -rf build-os2
 cmake -S . -B build-os2 -G "Unix Makefiles" \
-  -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/qt6-os2.cmake"
+  -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/qt6-os2.cmake" \
+  -DOPENSSL_ROOT_DIR="$OPENSSL_ROOT_DIR" \
+  -DINPUT_openssl=runtime
 make -C build-os2 -j2
 ```
 

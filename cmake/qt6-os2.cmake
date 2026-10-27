@@ -109,6 +109,8 @@ set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
 set(FEATURE_icu OFF CACHE STRING "Disable ICU for the OS/2 cross sysroot")
 set(FEATURE_brotli OFF CACHE STRING "Disable Brotli when its OS/2 library is unavailable")
 set(FEATURE_dbus OFF CACHE STRING "Disable D-Bus tools and libraries for the OS/2 cross build")
+# libudev is Linux-host-specific; never select a host pkg-config result for OS/2.
+set(FEATURE_libudev OFF CACHE BOOL "Disable Linux libudev for the OS/2 cross build" FORCE)
 set(INPUT_opengl no CACHE STRING "Disable OpenGL for the OS/2 cross build")
 set(TEST_ld_version_script OFF CACHE BOOL "Disable GNU version scripts for the OS/2 linker")
 set(QT_BUILD_TESTS OFF CACHE BOOL "Do not build Qt tests")

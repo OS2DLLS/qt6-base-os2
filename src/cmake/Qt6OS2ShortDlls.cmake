@@ -25,6 +25,10 @@ function(os2_qt_add_import_library target)
         message(FATAL_ERROR "OS/2 import-library tool is missing: ${_emximp}")
     endif()
 
+    # emximp accepts -p# for .lib output; its .a mode instead requires -m.
+    # Match CMake's target linker-file suffix to the page-size invocation.
+    set_property(TARGET "${target}" PROPERTY IMPORT_SUFFIX ".lib")
+
     # This function is called from the module directory that created target.
     add_custom_command(TARGET "${target}" POST_BUILD
         COMMAND "${_emximp}" -q -p16 -o
