@@ -14,62 +14,69 @@ output format is OS/2 OMF DLLs produced by the `cross-os2emx` toolchain.
 * An installed [`cross-os2emx`](https://github.com/komh/cross-os2emx)
   toolchain
 
-By default the toolchain is expected at `$HOME/opt/os2emx`. Set
-`OS2EMX_PREFIX` when it is installed elsewhere. `QT_HOST_PATH` must point to a
-native Qt installation for the host tools; it is not the OS/2 target prefix.
-For the current Vacuum/OS/2 setup, the cross sysroot (including `pthread.h`) is
-under `/data/os2emx`; the target OpenSSL package is expected under
+For the `/data` workspace, enter `/data/shell.nix` before building. It exports
+`OS2EMX_PREFIX=/data/os2emx`, the matching target sysroot and OMF tools, and
+`OS2EMX_INSTALL_ROOT=/data/os2emx` and `OS2EMX_HOST_INSTALL_ROOT=/data`. The native Qt host tools belong in
+`/data/qt6-host`; they are separate from the OS/2 target Qt prefix. The target
+OpenSSL headers and libraries are discovered under
 `/data/os2emx/i686-pc-os2-emx`.
+
+When the OS/2 target prefix is still CMake's default, `QtSetup.cmake` selects
+`$OS2EMX_INSTALL_ROOT` (therefore `/data/os2emx` in this workspace). An explicit
+`-DCMAKE_INSTALL_PREFIX=...` remains an override. Use a fresh build directory
+when validating the default; an existing CMake cache retains its previous
+prefix.
 
 ## Linux to OS/2 build
 
-From the repository root, configure once with CMake and then invoke Make:
+The supported workspace entry point is the root Makefile. From the already
+active `/data/shell.nix` shell, run `make qt-base` in `/data`; it builds the
+toolchain and target dependencies, installs native Qt host tools, configures
+Qt Base with this OS/2 toolchain, and installs Qt to the default target prefix.
+The Makefile does not start a nested Nix shell.
 
-# Current workspace paths under the active OS/2 prefix.
+For a direct diagnostic configure, use the same shell and an out-of-tree build
+directory. The install prefix is intentionally not passed: this exercises the
+`QtSetup.cmake` default.
 
 ```sh
-export OS2EMX_PREFIX="/data/os2emx"
-export OS2EMX_AR="/data/os2emx/bin/emxomfar"
-export QT_HOST_PATH="/data/qt6-host"
-export OPENSSL_ROOT_DIR="/data/os2emx/i686-pc-os2-emx"
-
-cmake -S . -B build-os2 -G "Unix Makefiles" \
-  -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/qt6-os2.cmake" \
-  -DOPENSSL_ROOT_DIR="$OPENSSL_ROOT_DIR" \
-  -DINPUT_openssl=runtime
-make -C build-os2 -j2
+nix-shell /data/shell.nix
+cmake -S /data/qt6-base-os2 -B /data/build-nix/qt6-base-os2-os2emx-ninja \
+  -DCMAKE_TOOLCHAIN_FILE=/data/qt6-base-os2/cmake/qt6-os2.cmake \
+  -DQT_HOST_PATH=/data/qt6-host \
+  -DOPENSSL_ROOT_DIR=/data/os2emx/i686-pc-os2-emx \
+  -DINPUT_openssl=runtime -DCMAKE_BUILD_TYPE=Release
+cmake --build /data/build-nix/qt6-base-os2-os2emx-ninja --parallel 2
+cmake --install /data/build-nix/qt6-base-os2-os2emx-ninja
 ```
 
-The native Qt tools must be runnable by the host. With Nix-provided host Qt,
-run the commands from the corresponding `nix develop` environment (or export
-the Nix store directories containing the host tools' shared libraries). A
-self-contained Linux Qt installation needs no additional runtime setup. Once
-the host environment is ready, the build itself is exactly two commands:
-`cmake ...` followed by `make -C build-os2`.
+`shell.nix` selects Ninja and limits builds to two jobs. The host Qt prefix must
+contain runnable Linux Qt tools and their CMake host packages (`Qt6HostInfo`,
+`Qt6CoreTools`, `Qt6GuiTools`, and `Qt6WidgetsTools`). The root Makefile builds
+and installs that host tree before configuring Qt Base.
 
-The checked-in toolchain file supplies the target compiler, target sysroot,
-OMF archiver, `emxomfld` linker flags, and the `libcx` runtime libraries. The
+The checked-in Qt toolchain file supplies the target compiler, target sysroot,
+OMF archiver, `emxomfld` linker flags, and `libcx` runtime libraries. The
 Qt-specific defaults disable ICU and Brotli, disable tests/examples/benchmarks,
 and disable GNU linker version scripts because those features are not provided
 by the OS/2 OMF link environment. Override a default with an explicit CMake
-cache option when the corresponding OS/2 dependency is installed.
+cache option only when the corresponding OS/2 dependency is installed.
 
-### SSL for Vacuum
+### Runtime OpenSSL backend
 
 `INPUT_openssl=runtime` enables Qt's dynamically loaded OpenSSL backend. Qt's
 `ssl` feature is derived from that backend; do not force `FEATURE_ssl=ON` by
 itself. `OPENSSL_ROOT_DIR` must identify the **target** OpenSSL prefix (with
 `include/openssl` and `lib`), never a Linux host OpenSSL installation. The
 cross-toolchain sysroot must also provide the target `pthread.h`: Qt's
-OpenSSL-header configure test includes it. In this setup, use
-`OS2EMX_PREFIX=/data/os2emx` and
-`OPENSSL_ROOT_DIR=/data/os2emx/i686-pc-os2-emx`.
+OpenSSL-header configure test includes it. The `/data` Makefile supplies the
+target sysroot as `OPENSSL_ROOT_DIR` and selects `INPUT_openssl=runtime`.
 
 After configuration, verify the feature selection before building:
 
 ```sh
 grep -E '^(OPENSSL_INCLUDE_DIR|FEATURE_openssl_runtime|QT_FEATURE_openssl_runtime|QT_FEATURE_ssl):' \
-  build-os2/CMakeCache.txt
+  /data/build-nix/qt6-base-os2-os2emx-ninja/CMakeCache.txt
 ```
 
 The expected result includes a found target `OPENSSL_INCLUDE_DIR` and
@@ -79,20 +86,22 @@ plugin and target OpenSSL DLLs reachable by OS/2. Qt searches for names matching
 `ssl*.dll` and `crypto*.dll`; this OpenSSL prefix supplies `ssl3.dll` and
 `crypto3.dll` below `lib`.
 
-A clean rebuild (in the same shell, retaining the environment exports above) is:
+A clean diagnostic configure uses a new build directory (the Makefile's
+standard build directory remains under `/data/build-nix`):
 
 ```sh
-rm -rf build-os2
-cmake -S . -B build-os2 -G "Unix Makefiles" \
-  -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/qt6-os2.cmake" \
-  -DOPENSSL_ROOT_DIR="$OPENSSL_ROOT_DIR" \
-  -DINPUT_openssl=runtime
-make -C build-os2 -j2
+cmake -S /data/qt6-base-os2 -B /data/build-nix/qt6-base-os2-os2emx-ninja \
+  -DCMAKE_TOOLCHAIN_FILE=/data/qt6-base-os2/cmake/qt6-os2.cmake \
+  -DQT_HOST_PATH=/data/qt6-host \
+  -DOPENSSL_ROOT_DIR=/data/os2emx/i686-pc-os2-emx \
+  -DINPUT_openssl=runtime -DCMAKE_BUILD_TYPE=Release
+cmake --build /data/build-nix/qt6-base-os2-os2emx-ninja --parallel 2
 ```
 
 ## Output
 
-The build produces target DLLs in `build-os2/bin`, including:
+The build produces target DLLs in
+`/data/build-nix/qt6-base-os2-os2emx-ninja/bin`, including:
 
 ```text
 Qt6Core.dll
@@ -105,27 +114,31 @@ Qt6Xml.dll
 ```
 
 OS/2 platform and image/database plugins are emitted below
-`build-os2/plugins`. The corresponding OMF import libraries (`Qt6Core.lib`,
-etc.) are emitted below `build-os2/lib`.
+`/data/build-nix/qt6-base-os2-os2emx-ninja/plugins`. The corresponding OMF import
+libraries (`Qt6Core.lib`, etc.) are emitted below
+`/data/build-nix/qt6-base-os2-os2emx-ninja/lib`.
 
 Verify that the files are OS/2 targets rather than host Linux objects:
 
 ```sh
-file build-os2/bin/Qt6Core.dll
-file build-os2/lib/Qt6Core.lib
+file /data/build-nix/qt6-base-os2-os2emx-ninja/bin/Qt6Core.dll
+file /data/build-nix/qt6-base-os2-os2emx-ninja/lib/Qt6Core.lib
 ```
 
 ## Installation
 
-Install into a staging prefix with the normal CMake install step:
+The root Makefile installs to `/data/os2emx` by default. For a direct
+CMake install, run `cmake --install` without `--prefix` so the configured
+prefix is respected:
 
 ```sh
-cmake --install build-os2 --prefix "$PWD/qt6-os2-install"
+cmake --install /data/build-nix/qt6-base-os2-os2emx-ninja
 ```
 
-The staging directory can then be copied to an OS/2 system. Keep the target
-DLLs, their `.lib` import libraries, the Qt headers, and the `plugins`
-directory together.
+`/data/os2emx` is a shared prefix containing the toolchain and nested target
+sysroot as well as Qt. Do not copy the entire prefix to OS/2; package only the
+required Qt DLLs, import libraries, headers, plugins, and their runtime
+dependencies.
 
 ## Repository layout
 

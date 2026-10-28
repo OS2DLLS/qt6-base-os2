@@ -138,13 +138,25 @@ if (PROJECT_NAME STREQUAL "QtBase" AND NOT QT_BUILD_STANDALONE_TESTS)
             # set on the command line to point to the qtbase build dir.
             set(__qt_default_prefix "${QtBase_BINARY_DIR}")
         else()
-            if(CMAKE_HOST_WIN32)
+            if(CMAKE_SYSTEM_NAME STREQUAL "OS2")
+                if(DEFINED ENV{OS2EMX_INSTALL_ROOT}
+                   AND NOT "$ENV{OS2EMX_INSTALL_ROOT}" STREQUAL "")
+                    set(__qt_default_prefix "$ENV{OS2EMX_INSTALL_ROOT}")
+                elseif(DEFINED ENV{OS2EMX_PREFIX}
+                       AND NOT "$ENV{OS2EMX_PREFIX}" STREQUAL "")
+                    set(__qt_default_prefix "$ENV{OS2EMX_PREFIX}")
+                else()
+                    set(__qt_default_prefix "/data/os2emx")
+                endif()
+            elseif(CMAKE_HOST_WIN32)
                 set(__qt_default_prefix "C:/Qt/")
+                string(APPEND __qt_default_prefix
+                    "Qt-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
             else()
                 set(__qt_default_prefix "/usr/local/")
+                string(APPEND __qt_default_prefix
+                    "Qt-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
             endif()
-            string(APPEND __qt_default_prefix
-                "Qt-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
         endif()
         set(CMAKE_INSTALL_PREFIX ${__qt_default_prefix} CACHE PATH
             "Install path prefix, prepended onto install directories." FORCE)

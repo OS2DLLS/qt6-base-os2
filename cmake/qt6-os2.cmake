@@ -1,7 +1,7 @@
 # CMake toolchain for building Qt 6.2.x for OS/2 on a Linux host.
 #
 # Usage:
-#   OS2EMX_PREFIX=$HOME/opt/os2emx \
+#   OS2EMX_PREFIX=/data/os2emx \
 #   QT_HOST_PATH=$PWD/../qt6-host-install \
 #   cmake -S . -B build-os2 \
 #     -DCMAKE_TOOLCHAIN_FILE=cmake/qt6-os2.cmake
@@ -18,7 +18,7 @@ if(DEFINED OS2EMX_PREFIX AND NOT "${OS2EMX_PREFIX}" STREQUAL "")
 elseif(DEFINED ENV{OS2EMX_PREFIX} AND NOT "$ENV{OS2EMX_PREFIX}" STREQUAL "")
     file(REAL_PATH "$ENV{OS2EMX_PREFIX}" OS2EMX_PREFIX)
 else()
-    set(OS2EMX_PREFIX "$ENV{HOME}/opt/os2emx")
+    set(OS2EMX_PREFIX "/data/os2emx")
 endif()
 
 if(NOT IS_DIRECTORY "${OS2EMX_PREFIX}")
@@ -45,21 +45,19 @@ set(CMAKE_CXX_COMPILER "${CMAKE_CURRENT_LIST_DIR}/os2-g++")
 if(DEFINED ENV{OS2EMX_AR} AND NOT "$ENV{OS2EMX_AR}" STREQUAL "")
     set(OS2EMX_AR "$ENV{OS2EMX_AR}")
 else()
-    set(OS2EMX_AR "${OS2EMX_PREFIX}/bin/emxomfar")
+    set(OS2EMX_AR "${OS2EMX_PREFIX}/${OS2EMX_TARGET}/bin/emxomfar")
 endif()
 set(CMAKE_AR "${OS2EMX_AR}" CACHE FILEPATH "Host OMF archiver" FORCE)
-set(CMAKE_RANLIB ":")
+set(CMAKE_RANLIB ":" CACHE STRING "No-op ranlib for OMF archives" FORCE)
 set(CMAKE_STRIP "${OS2EMX_PREFIX}/bin/${OS2EMX_TARGET}-strip")
 set(CMAKE_C_COMPILER_AR "${CMAKE_AR}" CACHE FILEPATH "C archiver" FORCE)
 set(CMAKE_CXX_COMPILER_AR "${CMAKE_AR}" CACHE FILEPATH "C++ archiver" FORCE)
-set(CMAKE_C_COMPILER_RANLIB "${CMAKE_RANLIB}" CACHE FILEPATH "C ranlib" FORCE)
-set(CMAKE_CXX_COMPILER_RANLIB "${CMAKE_RANLIB}" CACHE FILEPATH "C++ ranlib" FORCE)
 set(CMAKE_C_ARCHIVE_CREATE "${CMAKE_AR} cr <TARGET> <OBJECTS>")
 set(CMAKE_C_ARCHIVE_APPEND "${CMAKE_AR} r <TARGET> <OBJECTS>")
-set(CMAKE_C_ARCHIVE_FINISH "")
+set(CMAKE_C_ARCHIVE_FINISH "${CMAKE_COMMAND} -E true")
 set(CMAKE_CXX_ARCHIVE_CREATE "${CMAKE_AR} cr <TARGET> <OBJECTS>")
 set(CMAKE_CXX_ARCHIVE_APPEND "${CMAKE_AR} r <TARGET> <OBJECTS>")
-set(CMAKE_CXX_ARCHIVE_FINISH "")
+set(CMAKE_CXX_ARCHIVE_FINISH "${CMAKE_COMMAND} -E true")
 set(CMAKE_SYSROOT "${OS2EMX_PREFIX}/${OS2EMX_TARGET}")
 
 foreach(tool IN ITEMS CMAKE_C_COMPILER CMAKE_CXX_COMPILER CMAKE_AR CMAKE_STRIP)
@@ -112,6 +110,8 @@ set(FEATURE_dbus OFF CACHE STRING "Disable D-Bus tools and libraries for the OS/
 # libudev is Linux-host-specific; never select a host pkg-config result for OS/2.
 set(FEATURE_libudev OFF CACHE BOOL "Disable Linux libudev for the OS/2 cross build" FORCE)
 set(INPUT_opengl no CACHE STRING "Disable OpenGL for the OS/2 cross build")
+set(INPUT_libb2 qt CACHE STRING "Use Qt's bundled BLAKE2 implementation")
+set(INPUT_openssl runtime CACHE STRING "Enable the Qt runtime OpenSSL backend when target headers are found")
 set(TEST_ld_version_script OFF CACHE BOOL "Disable GNU version scripts for the OS/2 linker")
 set(QT_BUILD_TESTS OFF CACHE BOOL "Do not build Qt tests")
 set(QT_BUILD_EXAMPLES OFF CACHE BOOL "Do not build Qt examples")
