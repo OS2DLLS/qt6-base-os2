@@ -2,7 +2,7 @@
 #
 # Usage:
 #   OS2EMX_PREFIX=/data/os2emx \
-#   QT_HOST_PATH=$PWD/../qt6-host-install \
+#   QT_HOST_PATH=/data/os2emx \
 #   cmake -S . -B build-os2 \
 #     -DCMAKE_TOOLCHAIN_FILE=cmake/qt6-os2.cmake
 #

@@ -16,9 +16,10 @@ output format is OS/2 OMF DLLs produced by the `cross-os2emx` toolchain.
 
 For the `/data` workspace, enter `/data/shell.nix` before building. It exports
 `OS2EMX_PREFIX=/data/os2emx`, the matching target sysroot and OMF tools, and
-`OS2EMX_INSTALL_ROOT=/data/os2emx` and `OS2EMX_HOST_INSTALL_ROOT=/data`. The native Qt host tools belong in
-`/data/qt6-host`; they are separate from the OS/2 target Qt prefix. The target
-OpenSSL headers and libraries are discovered under
+`OS2EMX_INSTALL_ROOT=/data/os2emx` and
+`OS2EMX_HOST_INSTALL_ROOT=/data/os2emx`. Native Linux Qt host tools and OS/2
+target Qt files install into the shared `/data/os2emx` Unix-style prefix. The
+OpenSSL target headers and libraries are discovered under
 `/data/os2emx/i686-pc-os2-emx`.
 
 When the OS/2 target prefix is still CMake's default, `QtSetup.cmake` selects
@@ -43,7 +44,7 @@ directory. The install prefix is intentionally not passed: this exercises the
 nix-shell /data/shell.nix
 cmake -S /data/qt6-base-os2 -B /data/build-nix/qt6-base-os2-os2emx-ninja \
   -DCMAKE_TOOLCHAIN_FILE=/data/qt6-base-os2/cmake/qt6-os2.cmake \
-  -DQT_HOST_PATH=/data/qt6-host \
+  -DQT_HOST_PATH=/data/os2emx \
   -DOPENSSL_ROOT_DIR=/data/os2emx/i686-pc-os2-emx \
   -DINPUT_openssl=runtime -DCMAKE_BUILD_TYPE=Release
 cmake --build /data/build-nix/qt6-base-os2-os2emx-ninja --parallel 2
@@ -53,7 +54,8 @@ cmake --install /data/build-nix/qt6-base-os2-os2emx-ninja
 `shell.nix` selects Ninja and limits builds to two jobs. The host Qt prefix must
 contain runnable Linux Qt tools and their CMake host packages (`Qt6HostInfo`,
 `Qt6CoreTools`, `Qt6GuiTools`, and `Qt6WidgetsTools`). The root Makefile builds
-and installs that host tree before configuring Qt Base.
+and installs that host tree before configuring Qt Base. Host and target builds
+remain separate build trees but share the `/data/os2emx` install prefix.
 
 The checked-in Qt toolchain file supplies the target compiler, target sysroot,
 OMF archiver, `emxomfld` linker flags, and `libcx` runtime libraries. The
@@ -92,7 +94,7 @@ standard build directory remains under `/data/build-nix`):
 ```sh
 cmake -S /data/qt6-base-os2 -B /data/build-nix/qt6-base-os2-os2emx-ninja \
   -DCMAKE_TOOLCHAIN_FILE=/data/qt6-base-os2/cmake/qt6-os2.cmake \
-  -DQT_HOST_PATH=/data/qt6-host \
+  -DQT_HOST_PATH=/data/os2emx \
   -DOPENSSL_ROOT_DIR=/data/os2emx/i686-pc-os2-emx \
   -DINPUT_openssl=runtime -DCMAKE_BUILD_TYPE=Release
 cmake --build /data/build-nix/qt6-base-os2-os2emx-ninja --parallel 2
@@ -135,10 +137,10 @@ prefix is respected:
 cmake --install /data/build-nix/qt6-base-os2-os2emx-ninja
 ```
 
-`/data/os2emx` is a shared prefix containing the toolchain and nested target
-sysroot as well as Qt. Do not copy the entire prefix to OS/2; package only the
-required Qt DLLs, import libraries, headers, plugins, and their runtime
-dependencies.
+`/data/os2emx` is a shared prefix containing the Linux host Qt tools, OS/2 Qt
+files, the toolchain, and the nested target sysroot. Do not copy the entire
+prefix to OS/2; package only the required Qt DLLs, import libraries, headers,
+plugins, and their runtime dependencies.
 
 ## Repository layout
 

@@ -34,7 +34,7 @@ function(qt_internal_add_linker_version_script target)
 
         add_custom_command(TARGET "${target}" PRE_LINK
             COMMAND "${HOST_PERL}" "${QT_MKSPECS_DIR}/features/data/unix/findclasslist.pl" < "${infile}" > "${outfile}"
-            BYPRODUCTS "${outfile}" DEPENDS "${infile}"
+            BYPRODUCTS "${outfile}"
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             COMMENT "Generating version linker script"
             )
