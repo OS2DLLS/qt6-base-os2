@@ -60,6 +60,22 @@ set(CMAKE_CXX_ARCHIVE_APPEND "${CMAKE_AR} r <TARGET> <OBJECTS>")
 set(CMAKE_CXX_ARCHIVE_FINISH "${CMAKE_COMMAND} -E true")
 set(CMAKE_SYSROOT "${OS2EMX_PREFIX}/${OS2EMX_TARGET}")
 
+# QSQLite must link to the OS/2 SQLite DLL, not Qt's bundled Unix VFS.
+set(_qt_os2_sqlite_include "${CMAKE_CURRENT_LIST_DIR}/../src/3rdparty/sqlite")
+set(_qt_os2_sqlite_library "${CMAKE_SYSROOT}/lib/sqlite30.lib")
+if(NOT EXISTS "${_qt_os2_sqlite_include}/sqlite3.h")
+    message(FATAL_ERROR "Missing SQLite API header: ${_qt_os2_sqlite_include}/sqlite3.h")
+endif()
+if(NOT EXISTS "${_qt_os2_sqlite_library}")
+    message(FATAL_ERROR
+        "Missing OS/2 SQLite import library: ${_qt_os2_sqlite_library}\n"
+        "Generate it from the target Netlabs sqlite30.dll with emximp -p128.")
+endif()
+set(SQLite3_INCLUDE_DIR "${_qt_os2_sqlite_include}" CACHE PATH
+    "SQLite API headers for the OS/2 QSQLite plugin" FORCE)
+set(SQLite3_LIBRARY "${_qt_os2_sqlite_library}" CACHE FILEPATH
+    "OS/2 sqlite30.dll import library" FORCE)
+
 foreach(tool IN ITEMS CMAKE_C_COMPILER CMAKE_CXX_COMPILER CMAKE_AR CMAKE_STRIP)
     if(NOT EXISTS "${${tool}}")
         message(FATAL_ERROR "Required cross tool is missing: ${${tool}}")

@@ -3,6 +3,11 @@
 #### Inputs
 
 # input sqlite
+if(CMAKE_SYSTEM_NAME STREQUAL "OS2")
+    # Qt's bundled SQLite selects the Unix VFS on OS/2 and cannot open files.
+    # Force the working Netlabs SQLite import library for every Qt OS/2 build.
+    set(FEATURE_system_sqlite ON CACHE BOOL "Use the OS/2 system SQLite" FORCE)
+endif()
 set(INPUT_sqlite "undefined" CACHE STRING "")
 set_property(CACHE INPUT_sqlite PROPERTY STRINGS undefined qt system)
 
